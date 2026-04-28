@@ -1,0 +1,10 @@
+import Config
+
+nats_host = System.get_env("NATS_HOST") || "localhost"
+nats_port = String.to_integer(System.get_env("NATS_PORT") || "4222")
+
+config :bot_army_runtime, :nats,
+  servers: [{nats_host, nats_port}],
+  ping_interval: 30_000,
+  max_reconnect_attempts: 10,
+  reconnect_delay_ms: 1000
