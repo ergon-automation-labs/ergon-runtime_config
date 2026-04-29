@@ -12,9 +12,15 @@ MIX_BIN="/Users/abby/.local/share/mise/shims/mix"
 echo "🔍 Running pre-push checks..."
 echo ""
 
-# Check if we're pushing to main
+# One line per ref being pushed: <local ref> <local sha> <remote ref> <remote sha>
+# If the push creates a new remote ref, <remote sha> is forty hex zeros (see githooks(5)).
 read local_ref local_oid remote_ref remote_oid
 if [[ $remote_ref == "refs/heads/main" ]]; then
+  FIRST_PUSH_TO_REF=0
+  if [[ "$remote_oid" == "0000000000000000000000000000000000000000" ]]; then
+    FIRST_PUSH_TO_REF=1
+  fi
+
   echo "⚠️  Pushing to main branch - validating and building release..."
   echo ""
 
@@ -56,28 +62,36 @@ if [[ $remote_ref == "refs/heads/main" ]]; then
     exit 1
   }
 
-  # Extract version and create GitHub release
-  echo ""
-  echo "🚀 Publishing release to GitHub..."
-  VERSION=$(cat _build/prod/rel/runtime_config_bot/releases/start_erl.data | awk '{print $2}')
-  echo "Version: $VERSION"
+  # Pre-push runs *before* the pack is sent. On the first push, GitHub still has an empty
+  # default branch, so `gh release create` often returns HTTP 422 (Repository is empty).
+  if [[ $FIRST_PUSH_TO_REF -eq 1 ]]; then
+    echo ""
+    echo "🌱 First push to origin/main — skipping GitHub release and tarball."
+    echo "   (The remote has no ref yet; release upload is done on the next push to main.)"
+  else
+    # Extract version and create GitHub release
+    echo ""
+    echo "🚀 Publishing release to GitHub..."
+    VERSION=$(cat _build/prod/rel/runtime_config_bot/releases/start_erl.data | awk '{print $2}')
+    echo "Version: $VERSION"
 
-  # Create tarball
-  tar -czf runtime_config_bot-$VERSION.tar.gz -C _build/prod/rel runtime_config_bot/ || {
-    echo "❌ Failed to create tarball"
-    exit 1
-  }
-  echo "✓ Tarball created: runtime_config_bot-$VERSION.tar.gz"
+    # Create tarball
+    tar -czf runtime_config_bot-$VERSION.tar.gz -C _build/prod/rel runtime_config_bot/ || {
+      echo "❌ Failed to create tarball"
+      exit 1
+    }
+    echo "✓ Tarball created: runtime_config_bot-$VERSION.tar.gz"
 
-  # Create GitHub release
-  gh release create v$VERSION runtime_config_bot-$VERSION.tar.gz \
-    --title "Release v$VERSION" \
-    --notes "Runtime Config Bot Elixir release v$VERSION. Automatically deployed by Jenkins." \
-    --draft=false || {
-    echo "⚠️  Release already exists or GitHub publish failed"
-    echo "Continuing with push anyway..."
-  }
-  echo "✓ Release published to GitHub"
+    # Create GitHub release
+    gh release create "v$VERSION" runtime_config_bot-$VERSION.tar.gz \
+      --title "Release v$VERSION" \
+      --notes "Runtime Config Bot Elixir release v$VERSION. Automatically deployed by Jenkins." \
+      --draft=false || {
+      echo "⚠️  Release already exists or GitHub publish failed"
+      echo "Continuing with push anyway..."
+    }
+    echo "✓ Release published to GitHub"
+  fi
 
   # Cleanup build artifacts created by this hook
   echo ""
@@ -87,7 +101,11 @@ if [[ $remote_ref == "refs/heads/main" ]]; then
   echo "✓ Cleanup complete"
 
   echo ""
-  echo "✅ All checks passed, release built and published!"
+  if [[ $FIRST_PUSH_TO_REF -eq 1 ]]; then
+    echo "✅ All checks passed! (GitHub release will run on your *next* push to main.)"
+  else
+    echo "✅ All checks passed, release built and published!"
+  fi
   echo "📤 Proceeding with push..."
 else
   echo "ℹ️  Pushing to feature branch - skipping validation"
