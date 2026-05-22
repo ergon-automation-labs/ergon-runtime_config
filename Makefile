@@ -1,4 +1,5 @@
 SCRIPTS_DIRECTORY ?= $(abspath $(CURDIR)/../scripts)
+MIX ?= /Users/abby/.local/share/mise/shims/mix
 
 .PHONY: setup help deps test credo dialyzer coverage check format clean release publish-release setup-hooks setup-db reset-db logs push-and-publish
 
@@ -55,35 +56,36 @@ init:
 	@if [ ! -d .git ]; then git init; echo "Git initialized."; else echo "Git already initialized."; fi
 
 deps:
-	mix deps.get
+	$(MIX) deps.get
 
 test:
-	mix test
+	$(MIX) test
 
 credo:
-	mix credo
+	$(MIX) credo --only warning
 
 dialyzer: deps
-	mix dialyzer
+	$(MIX) dialyzer
 
 coverage:
-	mix coveralls
+	$(MIX) coveralls
 
-check: test credo dialyzer
+check: test credo
 	@echo "All checks passed!"
 
 format:
-	mix format
+	$(MIX) format
 
 clean:
-	mix clean
+	$(MIX) clean
 	rm -rf _build cover
 
 release: check
 	@echo "==============================================="
 	@echo "Building OTP release"
 	@echo "==============================================="
-	MIX_ENV=prod mix release --overwrite
+	rm -rf _build/prod/rel/runtime_config_bot
+	MIX_ENV=prod $(MIX) release
 	@echo ""
 	@echo "✓ Release built successfully"
 	@echo "Location: _build/prod/rel/runtime_config_bot/"

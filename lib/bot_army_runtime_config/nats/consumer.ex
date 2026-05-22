@@ -106,24 +106,22 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
     tenant = tenant_id(payload)
     key = Map.get(payload, "key")
 
-    cond do
-      not is_binary(key) or key == "" ->
-        send_reply(reply_to, %{"ok" => false, "error" => "key required"})
+    if not is_binary(key) or key == "" do
+      send_reply(reply_to, %{"ok" => false, "error" => "key required"})
+    else
+      case ConfigStore.get(tenant, key) do
+        {:ok, value, at} ->
+          send_reply(reply_to, %{
+            "ok" => true,
+            "tenant_id" => tenant,
+            "key" => key,
+            "value" => value,
+            "updated_at" => DateTime.to_iso8601(at)
+          })
 
-      true ->
-        case ConfigStore.get(tenant, key) do
-          {:ok, value, at} ->
-            send_reply(reply_to, %{
-              "ok" => true,
-              "tenant_id" => tenant,
-              "key" => key,
-              "value" => value,
-              "updated_at" => DateTime.to_iso8601(at)
-            })
-
-          {:error, :not_found} ->
-            send_reply(reply_to, %{"ok" => false, "error" => "not_found"})
-        end
+        {:error, :not_found} ->
+          send_reply(reply_to, %{"ok" => false, "error" => "not_found"})
+      end
     end
   end
 
@@ -187,19 +185,17 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
     tenant = tenant_id(payload)
     key = Map.get(payload, "key")
 
-    cond do
-      not is_binary(key) or key == "" ->
-        send_reply(reply_to, %{"ok" => false, "error" => "key required"})
+    if not is_binary(key) or key == "" do
+      send_reply(reply_to, %{"ok" => false, "error" => "key required"})
+    else
+      case ConfigStore.delete(tenant, key) do
+        :ok ->
+          publish_changed(tenant, key, "delete", nil)
+          send_reply(reply_to, %{"ok" => true, "tenant_id" => tenant, "key" => key})
 
-      true ->
-        case ConfigStore.delete(tenant, key) do
-          :ok ->
-            publish_changed(tenant, key, "delete", nil)
-            send_reply(reply_to, %{"ok" => true, "tenant_id" => tenant, "key" => key})
-
-          {:error, :not_found} ->
-            send_reply(reply_to, %{"ok" => false, "error" => "not_found"})
-        end
+        {:error, :not_found} ->
+          send_reply(reply_to, %{"ok" => false, "error" => "not_found"})
+      end
     end
   end
 
