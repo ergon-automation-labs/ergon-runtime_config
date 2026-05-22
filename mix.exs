@@ -25,8 +25,8 @@ defmodule BotArmyRuntimeConfig.MixProject do
 
   defp deps do
     [
-      {:bot_army_core, path: "../bot_army_core"},
-      {:bot_army_runtime, path: "../bot_army_runtime"},
+      {:bot_army_library_core, path: "../bot_army_library_core"},
+      {:bot_army_library_runtime, path: "../bot_army_library_runtime"},
       {:jason, "~> 1.4"},
       {:logger_json, "~> 5.1"},
 
