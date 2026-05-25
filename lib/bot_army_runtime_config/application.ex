@@ -3,7 +3,7 @@ defmodule BotArmyRuntimeConfig.Application do
   Supervision tree for the Runtime Config Bot.
 
   Starts an ETS-backed `ConfigStore`, optional NATS consumer (skipped in `:test`), and pulse publisher.
-  NATS connection is provided by `:bot_army_runtime`.
+  NATS connection is provided by `:bot_army_library_runtime`.
   """
 
   use Application

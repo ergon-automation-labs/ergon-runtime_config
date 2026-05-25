@@ -81,10 +81,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
 
         {:error, reason} ->
           Logger.warning("[NATS.Consumer] Decode failed: #{inspect(reason)}")
-
-          if msg.reply_to do
-            send_reply(msg.reply_to, %{"ok" => false, "error" => "decode_failed"})
-          end
+          maybe_reply_decode_error(msg.reply_to)
       end
     end)
 
@@ -203,6 +200,11 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
     Logger.debug("[NATS.Consumer] Unhandled topic: #{topic}")
     :ok
   end
+
+  defp maybe_reply_decode_error(nil), do: :ok
+
+  defp maybe_reply_decode_error(reply_to),
+    do: send_reply(reply_to, %{"ok" => false, "error" => "decode_failed"})
 
   defp tenant_id(payload) when is_map(payload) do
     case Map.get(payload, "tenant_id") do
