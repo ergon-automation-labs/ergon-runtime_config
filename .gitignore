@@ -25,3 +25,4 @@ Thumbs.db
 _build/
 .elixir_ls/
 *.tar.gz
+*.tar.xz
