@@ -1,5 +1,15 @@
 import Config
 
+# Logger with correlation_id support
+config :logger,
+  level: :info,
+  backends: [:console],
+  default_formatter: {BotArmyRuntime.LoggerFormatter, []}
+
+config :logger, :console,
+  format: {BotArmyRuntime.LoggerFormatter, []},
+  metadata: [:correlation_id]
+
 if File.exists?(".env") do
   File.stream!(".env")
   |> Stream.map(&String.trim_trailing/1)
@@ -16,3 +26,4 @@ end
 if File.exists?("config/#{Mix.env()}.exs") do
   import_config "#{Mix.env()}.exs"
 end
+
