@@ -35,9 +35,9 @@ defmodule BotArmyRuntimeConfig.PulsePublisher do
       "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    case BotArmyRuntime.NATS.Publisher.publish("bot.runtime_config.pulse", payload) do
+    case BotArmyLibraryRuntime.NATS.Publisher.publish("bot.runtime_config.pulse", payload) do
       {:ok, _} ->
-        BotArmyRuntime.SynapseHealth.publish(
+        BotArmyLibraryRuntime.SynapseHealth.publish(
           source: "bot_army_runtime_config",
           service: "runtime_config",
           health_signal: "nominal"

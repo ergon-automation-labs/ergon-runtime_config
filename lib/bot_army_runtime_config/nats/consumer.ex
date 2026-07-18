@@ -7,8 +7,8 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
   require Logger
 
   alias BotArmyRuntimeConfig.ConfigStore
-  alias BotArmyRuntime.NATS.Connection
-  alias BotArmyRuntime.Tenant
+  alias BotArmyLibraryRuntime.NATS.Connection
+  alias BotArmyLibraryRuntime.Tenant
 
   @registry_heartbeat_ms 20_000
   @version Mix.Project.config()[:version]
@@ -55,7 +55,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
           end
 
         Logger.info("[NATS.Consumer] Subscribed to runtime_config subjects")
-        BotArmyRuntime.Registry.register("runtime_config", @subjects, @version)
+        BotArmyLibraryRuntime.Registry.register("runtime_config", @subjects, @version)
         Process.send_after(self(), :registry_heartbeat, @registry_heartbeat_ms)
 
         {:ok,
@@ -74,7 +74,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
 
   @impl true
   def handle_info({:msg, msg}, state) do
-    BotArmyRuntime.Tracing.with_consumer_span(msg.topic, Map.get(msg, :headers, []), fn ->
+    BotArmyLibraryRuntime.Tracing.with_consumer_span(msg.topic, Map.get(msg, :headers, []), fn ->
       case decode_message(msg.body) do
         {:ok, payload} ->
           route_message(msg.topic, payload, msg.reply_to, state)
@@ -90,7 +90,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
 
   def handle_info(:registry_heartbeat, state) do
     if Map.get(state, :registry_registered?) do
-      BotArmyRuntime.Registry.register("runtime_config", @subjects, @version)
+      BotArmyLibraryRuntime.Registry.register("runtime_config", @subjects, @version)
       Process.send_after(self(), :registry_heartbeat, @registry_heartbeat_ms)
     end
 
@@ -230,7 +230,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
       }
       |> maybe_put_value(action, value_or_nil)
 
-    case BotArmyRuntime.NATS.Publisher.publish("events.runtime_config.changed", payload) do
+    case BotArmyLibraryRuntime.NATS.Publisher.publish("events.runtime_config.changed", payload) do
       {:ok, _} ->
         :ok
 
@@ -247,7 +247,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
   end
 
   defp decode_message(body) do
-    case BotArmyCore.NATS.Decoder.decode(body) do
+    case BotArmyLibraryCore.NATS.Decoder.decode(body) do
       {:ok, %{"payload" => payload}} ->
         {:ok, payload}
 
@@ -265,7 +265,7 @@ defmodule BotArmyRuntimeConfig.NATS.Consumer do
   defp send_reply(nil, _payload), do: :ok
 
   defp send_reply(reply_to, payload) when is_binary(reply_to) do
-    case BotArmyRuntime.NATS.Publisher.publish(reply_to, payload) do
+    case BotArmyLibraryRuntime.NATS.Publisher.publish(reply_to, payload) do
       :ok ->
         :ok
 
