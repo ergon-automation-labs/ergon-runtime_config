@@ -4,7 +4,7 @@ defmodule BotArmyRuntimeConfig.MixProject do
   def project do
     [
       app: :bot_army_runtime_config,
-      version: "0.1.5",
+      version: "0.1.6",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -26,7 +26,7 @@ defmodule BotArmyRuntimeConfig.MixProject do
   defp deps do
     [
       {:bot_army_library_core, path: "../bot_army_library_core"},
-      {:bot_army_library_runtime, path: "../bot_army_library_runtime"},
+      {:bot_army_library_runtime, path: "../bot_army_library_runtime", override: true},
       {:jason, "~> 1.4"},
       {:logger_json, "~> 5.1"},
 
