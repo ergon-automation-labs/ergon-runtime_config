@@ -154,4 +154,4 @@ push: test compile credo
 
 
 git-push:
-	@git push origin main 2>&1 | tail -3
+	@LOG="/tmp/git-push-$$(date +%s).log"; if git push origin main > "$$LOG" 2>&1; then tail -3 "$$LOG"; else cat "$$LOG"; echo "✗ Push failed — log: $$LOG"; exit 1; fi
