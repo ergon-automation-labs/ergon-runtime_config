@@ -127,16 +127,10 @@ publish-release: release
 	echo "Creating GitHub release v$$VERSION..."; \
 	gh release create v$$VERSION runtime_config_bot-$$VERSION.tar.gz \
 		--title "Release v$$VERSION" \
-		--notes "Runtime Config Bot Elixir release v$$VERSION. Download and deploy with Jenkins." \
-		--draft=false; \
-	echo "✓ Release published to GitHub"; \
-	echo ""; \
-	echo "Next steps:"; \
-	echo "1. Jenkins will automatically detect the new release"; \
-	echo "2. Trigger deployment in Jenkins UI or wait for auto-deployment"; \
-	echo "3. Check deployment status: make jenkins-logs"; \
-	echo ""
+		--notes "Runtime Config Bot Elixir release v$$VERSION." \
+		--draft=false
 
+	@$(MAKE) publish-deploy-event TARGET=air
 push-and-publish:
 	@git push && $(MAKE) publish-release
 
